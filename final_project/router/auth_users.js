@@ -45,8 +45,43 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-    //Write your code here
-    return res.status(300).json({ message: "Yet to be implemented" });
+    // pending: check if there was a review sent
+    const review = req.body.review;
+    const username = req.session.authorization.username;
+    const isbn = parseInt(req.params.isbn);
+    if (!books[isbn]) {
+        return res.status(404).send('Book not found');
+    }
+    // Add a new review under the username who posted
+    books[isbn].reviews[username] = review;
+    return res.status(200).json({ 
+        message: "Review added successfully", 
+        book: books[isbn],
+    });
+});
+
+// Delete a book review
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn = parseInt(req.params.isbn);
+    const username = req.session.authorization.username;
+    if (!books[isbn]){
+        return res.status(404).send('Book not found');
+    }
+    let bookReviews = books[isbn].reviews;
+    const numberOfReviews = Object.keys(bookReviews).length;
+    for (const review in bookReviews){
+        if (review === username){
+            delete bookReviews[review];
+        }
+    }
+    const updatedNumberOfReviews = Object.keys(bookReviews).length; 
+    if (numberOfReviews === updatedNumberOfReviews){
+        return res.status(200).json({ message: 'No changes made to reviews'});
+    } 
+    return res.status(200).json({
+        message: `Reviews deleted successfully for user ${username}`,
+        book: books[isbn],
+    })
 });
 
 module.exports.authenticated = regd_users;
